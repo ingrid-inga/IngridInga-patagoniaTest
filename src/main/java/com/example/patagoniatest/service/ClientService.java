@@ -9,6 +9,8 @@ import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.stream.Collectors;
 
 @Service
 public class ClientService {
@@ -32,7 +34,45 @@ public class ClientService {
         clientRepository.deleteById(id);
     }
 
-    public Client findById(Long id) {
+    public Optional<Client> getClientById(Long id) {
+        return clientRepository.findById(id);
+    }
+
+    @Transactional
+    public void updateClient(Client client, Long id) {
+        Client updatedClient = clientRepository.findById(id).orElseThrow(() -> new IllegalStateException(
+                "client with id: " + id + "doesn´t exists"
+        ));
+        if (!Objects.equals(updatedClient.getFullName(), client.getFullName())){
+            updatedClient.setFullName(client.getFullName());
+        }
+        if (updatedClient.getIncome() != client.getIncome()){
+            updatedClient.setIncome(client.getIncome());
+        }
+    }
+
+    public OptionalDouble getEarningsAverage() {
+        List<Client> clients = clientRepository.findAll();
+        return clients.stream().mapToDouble(Client::getIncome).average();
+    }
+
+    public List<Client> getTopEarners() {
+        List<Client> clients = clientRepository.findAll();
+        return clients.stream().filter(client -> client.getIncome() >= 10000).collect(Collectors.toList());
+    }
+
+     public String getNames() {
+        List<Client> clients = clientRepository.findAll();
+        return clients.stream().map(Client::getFullName).collect(Collectors.joining("-"));
+    }
+
+
+   /* public optional<Client> getIncomeprom(Integer income){
+        clients.stream().map(Client::getIncome).average().isPresent(System.out.println());
+        return null;
+    }
+
+        public Client findById(Long id) {
         Optional<Client> response = clientRepository.findById(id);
         if(response.isPresent())
             return response.get();
@@ -40,16 +80,33 @@ public class ClientService {
     }
 
 
+    public Optional getIncome(Integer income) {
+
+   // public OptionalDouble getEarningsAverage() {
+        List<Client> clients = clientRepository.findAll();
+        return clients.stream()
+                .mapToDouble(Client::getIncome).filter(income -> income >= 10000)
+                .average();
+    }
+
+*/
+
+
     @Transactional
-    public void updateClient(Long id, Client client) throws IllegalStateException {
-        Client client1 = this.findById(id);
+    public void updateClient(Long id, Client client) {
+        Client client1 = clientRepository.findById(id).orElseThrow(() -> new IllegalStateException(
+                "client with id: " + id + "doesn't exist"));
        if (client1.getFullName().equals(client)){
-           client1.setFullName(client1.getFullName());
+           client1.setFullName(client.getFullName());
        }
         if (client1.getIncome().equals(client)){
-            client1.setIncome(client1.getIncome());
+            client1.setIncome(client.getIncome());
         }
-        clientRepository.save(client1);
+        clientRepository.save(client);
     }
+
+
+
+
 
 }
